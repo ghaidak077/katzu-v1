@@ -57,27 +57,13 @@ fun SessionReportScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Box(
+                Image(
+                    painter = painterResource(id = R.drawable.katzu_celebrating),
+                    contentDescription = "Katzu Celebrating",
                     modifier = Modifier
-                        .size(110.dp)
-                        .shadow(
-                            elevation = 28.dp,
-                            shape = CircleShape,
-                            ambientColor = Primary.copy(alpha = 0.5f),
-                            spotColor = Primary.copy(alpha = 0.7f)
-                        )
-                        .clip(CircleShape)
-                        .background(SurfaceCard)
-                        .border(2.dp, Primary.copy(alpha = 0.4f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.katzu_mascot),
-                        contentDescription = "Celebrating Mascot",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                        .size(160.dp),
+                    contentScale = ContentScale.Fit
+                )
 
                 Text(
                     text = "أداء أفضل بكثير مما توقّعت.",

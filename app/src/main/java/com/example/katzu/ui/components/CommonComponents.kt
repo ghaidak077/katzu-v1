@@ -65,7 +65,7 @@ fun TopHeaderBar(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.katzu_mascot),
+                        painter = painterResource(id = R.drawable.katzu_trail_header),
                         contentDescription = "Katzu Mascot",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -139,11 +139,11 @@ fun TopHeaderBar(
                         .testTag("top_profile_button"),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
+                    Image(
+                        painter = painterResource(id = R.drawable.user_avatar),
                         contentDescription = "حسابي",
-                        tint = Secondary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
                 }
             }

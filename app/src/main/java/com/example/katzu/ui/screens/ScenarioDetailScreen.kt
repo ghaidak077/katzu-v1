@@ -168,7 +168,7 @@ fun ScenarioDetailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.katzu_mascot),
+                            painter = painterResource(id = R.drawable.katzu_scenario_host),
                             contentDescription = "Coach Katzu",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

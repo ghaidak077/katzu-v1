@@ -421,7 +421,7 @@ fun WordInsightBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.katzu_mascot),
+                            painter = painterResource(id = R.drawable.katzu_word_insight),
                             contentDescription = "Katzu Tip",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

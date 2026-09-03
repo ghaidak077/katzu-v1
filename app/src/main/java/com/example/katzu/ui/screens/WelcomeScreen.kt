@@ -100,31 +100,18 @@ fun WelcomeScreen(
             // Mascot & Hero Content
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier.padding(vertical = 24.dp)
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+                modifier = Modifier.padding(vertical = 16.dp)
             ) {
-                // Mascot Card with circular glow
-                Box(
+                // Sticker-style Katzu mascot placed directly on the background
+                Image(
+                    painter = painterResource(id = R.drawable.katzu_welcome),
+                    contentDescription = "Katzu Mascot",
                     modifier = Modifier
-                        .size(160.dp)
-                        .shadow(
-                            elevation = 32.dp,
-                            shape = CircleShape,
-                            ambientColor = Primary.copy(alpha = 0.4f),
-                            spotColor = Primary.copy(alpha = 0.6f)
-                        )
-                        .clip(CircleShape)
-                        .background(SurfaceCard)
-                        .border(2.dp, Primary.copy(alpha = 0.4f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.katzu_mascot),
-                        contentDescription = "Katzu Mascot",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                        .width(240.dp)
+                        .wrapContentHeight(),
+                    contentScale = ContentScale.Fit
+                )
 
                 Text(
                     text = "KATZU",

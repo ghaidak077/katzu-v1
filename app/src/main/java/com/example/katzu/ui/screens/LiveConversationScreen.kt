@@ -304,11 +304,24 @@ fun LiveConversationScreen(
                 ) {
                     if (isListening) {
                         AudioWaveformBar(isListening = true)
-                        Text(
-                            text = "كاتزو يستمع لنطقك الآن... تحدث بالألمانية",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.katzu_listening),
+                                contentDescription = "كاتزو يستمع",
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text(
+                                text = "كاتزو يستمع لنطقك الآن... تحدث بالألمانية",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Primary
+                            )
+                        }
                     } else {
                         Text(
                             text = "اضغط على المايك للتحدث أو اختر عبارة من الأعلى",
@@ -418,7 +431,7 @@ private fun KatzuMessageBubble(
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.katzu_mascot),
+                painter = painterResource(id = R.drawable.katzu_barista),
                 contentDescription = "Katzu",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -540,14 +553,22 @@ private fun UserMessageBubble(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.AutoFixHigh,
-                                contentDescription = null,
-                                tint = StatusLearning,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(SurfaceCardSubtle),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.katzu_peace),
+                                    contentDescription = "تصحيح كاتزو",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
                             Text(
                                 text = "تصحيح كاتزو الساخر",
                                 style = MaterialTheme.typography.labelSmall,

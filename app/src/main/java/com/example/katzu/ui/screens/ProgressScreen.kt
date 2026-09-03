@@ -1,5 +1,6 @@
 package com.example.katzu.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -14,10 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.katzu.R
 import com.example.katzu.model.UserProfile
 import com.example.katzu.ui.theme.*
 
@@ -38,30 +42,48 @@ fun ProgressScreen(
     ) {
         // Section Header
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(
-                    shape = RoundedCornerShape(9999.dp),
-                    color = Primary.copy(alpha = 0.15f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    Surface(
+                        shape = RoundedCornerShape(9999.dp),
+                        color = Primary.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "تحليل الأداء الذكي",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
                     Text(
-                        text = "تحليل الأداء الذكي",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Primary,
+                        text = "تقدمك اللغوي ومسارك",
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "الأرقام لا تكذب، وكاتزو أيضاً لا يُجامل. استمر في التحدث بلا خجل.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        lineHeight = 18.sp
                     )
                 }
-                Text(
-                    text = "تقدمك اللغوي ومسارك",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "الأرقام لا تكذب، وكاتزو أيضاً لا يُجامل. استمر في التحدث بلا خجل.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    lineHeight = 18.sp
+
+                Image(
+                    painter = painterResource(id = R.drawable.katzu_progress_mascot),
+                    contentDescription = "Katzu Mascot",
+                    modifier = Modifier
+                        .size(68.dp)
+                        .padding(start = 8.dp),
+                    contentScale = ContentScale.Fit
                 )
             }
         }
@@ -322,6 +344,44 @@ fun ProgressScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary,
                         lineHeight = 18.sp
+                    )
+                }
+            }
+        }
+
+        // Motivational Footer Micro-card
+        item {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceCardSubtle,
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(SurfaceCard),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.katzu_badge),
+                            contentDescription = "Katzu Badge",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    Text(
+                        text = "نصيحة كاتزو اليوم: حروف الجر تتطلب Akkusativ عندما تتحرك باتجاه هدف معين. لا تقلق، لن تعاقبك برلين على خطأ صغير!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        lineHeight = 18.sp,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }

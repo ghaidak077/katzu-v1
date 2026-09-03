@@ -72,7 +72,7 @@ fun ProfileSettingsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.katzu_mascot),
+                                painter = painterResource(id = R.drawable.katzu_settings_mascot),
                                 contentDescription = "Profile Mascot",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -410,6 +410,95 @@ fun ProfileSettingsScreen(
                                 uncheckedTrackColor = SurfaceCardSubtle
                             )
                         )
+                    }
+                }
+            }
+        }
+
+        // Sarcastic Mascot Voice Box Note
+        item {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = SurfaceCardSubtle,
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(SurfaceCard),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.katzu_profile_card),
+                            contentDescription = "Katzu",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "«تعطيل التنبيهات لن يعفيك من ضبط أدوات التعريف (der, die, das).. سأظل في انتظارك.»",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextPrimary,
+                            lineHeight = 18.sp
+                        )
+                        Text(
+                            text = "— كاتزو",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextMuted
+                        )
+                    }
+                }
+            }
+        }
+
+        // About & Support Section
+        item {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "حول التطبيق والدعم",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("إصدار التطبيق", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                        Text("v1.2.0 (Build 42)", style = MaterialTheme.typography.bodySmall, color = TextMuted)
+                    }
+
+                    HorizontalDivider(color = BorderSubtle, thickness = 0.5.dp)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("صُنع بواسطة", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                        Text("غيدق علوش — ghaidak.com", style = MaterialTheme.typography.bodySmall, color = Primary, fontWeight = FontWeight.Bold)
                     }
                 }
             }

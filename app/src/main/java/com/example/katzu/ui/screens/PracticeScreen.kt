@@ -79,30 +79,48 @@ fun PracticeScreen(
     ) {
         // Section Header
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Surface(
-                    shape = RoundedCornerShape(9999.dp),
-                    color = Primary.copy(alpha = 0.15f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    Surface(
+                        shape = RoundedCornerShape(9999.dp),
+                        color = Primary.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "مساحة التكرار المتباعد",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
                     Text(
-                        text = "مساحة التكرار المتباعد",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Primary,
+                        text = "منطقة التدريب اليومي",
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "صقل المفردات والقواعد قبل أن يُحرجك كاتزو بنظرته الساخرة في السيناريوهات.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        lineHeight = 18.sp
                     )
                 }
-                Text(
-                    text = "منطقة التدريب اليومي",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "صقل المفردات والقواعد قبل أن يُحرجك كاتزو بنظرته الساخرة في السيناريوهات.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    lineHeight = 18.sp
+
+                Image(
+                    painter = painterResource(id = R.drawable.katzu_practice),
+                    contentDescription = "Katzu Practice Coach",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .padding(start = 8.dp),
+                    contentScale = ContentScale.Fit
                 )
             }
         }

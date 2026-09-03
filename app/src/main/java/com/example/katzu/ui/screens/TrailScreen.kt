@@ -118,7 +118,7 @@ fun TrailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.katzu_mascot),
+                                painter = painterResource(id = R.drawable.katzu_thumbs_up),
                                 contentDescription = "Katzu Mascot",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -306,7 +306,7 @@ fun TrailScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.katzu_mascot),
+                            painter = painterResource(id = R.drawable.katzu_trail_guide),
                             contentDescription = "Katzu Tip",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
