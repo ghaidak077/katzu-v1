@@ -2,8 +2,12 @@ package com.example.katzu.model
 
 enum class AppScreen {
     Welcome,
+    SignIn,
+    SubscriptionRedemption,
     MainTabs,
     ScenarioDetail,
+    Study,
+    Quiz,
     LiveConversation,
     SessionReport
 }
@@ -88,7 +92,20 @@ data class ChatMessage(
     val correctedGerman: String = "",
     val roastComment: String = "",
     val grammarRule: String = "",
-    val timestamp: String = ""
+    val timestamp: String = "",
+    val mistakeSegment: String = "",
+    val correctedSegment: String = "",
+    val positiveNoteAr: String = "",
+    val wasHintUsed: Boolean = false,
+    val isGenerating: Boolean = false
+)
+
+data class SessionMistakeSummary(
+    val originalMistake: String,
+    val correctedGerman: String,
+    val grammarRule: String,
+    val roastComment: String,
+    val wasHintUsed: Boolean = false
 )
 
 data class Scenario(
@@ -103,22 +120,32 @@ data class Scenario(
     val coachTitle: String,
     val coachRoastQuote: String,
     val goals: List<ScenarioGoal>,
-    val vocabularyWordIds: List<String>
+    val vocabularyWordIds: List<String>,
+    val category: String = "",
+    val aiPersona: String = ""
 )
 
 data class UserProfile(
-    var name: String = "سامر الشامي",
-    var email: String = "samer@example.com",
-    var streakDays: Int = 5,
-    var xp: Int = 1240,
-    var currentLevel: String = "A1.1",
-    var masteredWordsCount: Int = 114,
-    var learningWordsCount: Int = 28,
-    var totalWordsCount: Int = 142,
-    var completedScenarios: Int = 19,
-    var practiceHours: Double = 4.8,
-    var fluencyRatePercent: Int = 88,
+    var name: String = "",
+    var email: String = "",
+    var streakDays: Int = 0,
+    var xp: Int = 0,
+    var currentLevel: String = "A1",
+    var masteredWordsCount: Int = 0,
+    var learningWordsCount: Int = 0,
+    var totalWordsCount: Int = 0,
+    var completedScenarios: Int = 0,
+    var practiceHours: Double = 0.0,
+    var fluencyRatePercent: Int = 0,
     var speechSpeed: Float = 1.0f,
     var sarcasmLevel: String = "لاذع وساخر",
-    var isProActive: Boolean = true
+    var isProActive: Boolean = false,
+    var dailyRemindersEnabled: Boolean = true,
+    var reminderFrequencyPreset: String = "regular", // "casual", "regular", "serious", "intense"
+    var reminderHour: Int = 20,
+    var reminderMinute: Int = 0,
+    var targetGoalId: String = "goal_a2",
+    var targetGoalTitle: String = "الوصول إلى مستوى A2 والتحدث بثقة",
+    var targetWeeklyDays: Int = 5,
+    var targetDailyMinutes: Int = 10
 )

@@ -27,12 +27,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.automirrored.filled.Login
 import com.example.katzu.R
 import com.example.katzu.ui.theme.*
 
 @Composable
 fun WelcomeScreen(
-    onStartJourney: (String) -> Unit
+    onStartJourney: (String) -> Unit,
+    onLoginClick: () -> Unit = {}
 ) {
     var nameInput by remember { mutableStateOf("") }
 
@@ -88,7 +90,7 @@ fun WelcomeScreen(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Katzu AI • الألمانية بذكاء",
+                            text = "Katzu AI • محادثاتك تبدأ هنا",
                             style = MaterialTheme.typography.labelSmall,
                             color = PrimaryFixedDim,
                             fontWeight = FontWeight.Bold
@@ -122,20 +124,20 @@ fun WelcomeScreen(
                 )
 
                 Text(
-                    text = "أهلاً بك. الألمانية معقدة جداً، لكنني سأجعلها قابلة للاحتمال.",
+                    text = "الألمانية طلاقة، وليست مجرد قواعد.",
                     style = MaterialTheme.typography.headlineSmall,
                     color = TextPrimary,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 28.sp
+                    lineHeight = 32.sp
                 )
 
                 Text(
-                    text = "محادثات صوتية حقيقية بالذكاء الاصطناعي مع قطٍّ غير مبالٍ على الإطلاق.",
+                    text = "أنا كاتزو، رفيقك الذكي. سأدرّبك على خوض محادثات حقيقية من واقع الحياة، وأصحح لك خطوة بخطوة لتتحدث ببديهية وثقة.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
-                    lineHeight = 22.sp
+                    lineHeight = 24.sp
                 )
 
                 // Name input
@@ -150,16 +152,16 @@ fun WelcomeScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text = "ما اسمك المستعار؟",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextSecondary,
+                            text = "ما الذي يجب علي مناداتك؟",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = TextPrimary,
                             fontWeight = FontWeight.Bold
                         )
 
                         OutlinedTextField(
                             value = nameInput,
                             onValueChange = { nameInput = it },
-                            placeholder = { Text("مثال: سامر، ريم...", color = TextMuted) },
+                            placeholder = { Text("اسمك المفضل...", color = TextMuted) },
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -201,13 +203,46 @@ fun WelcomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text = "ابدأ الرحلة",
+                            text = "ابدأ رحلتك معي",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Icon(
                             imageVector = Icons.Default.ArrowForward,
                             contentDescription = null
+                        )
+                    }
+                }
+
+                // Secondary ghost button: direct login for returning users with activated accounts
+                OutlinedButton(
+                    onClick = onLoginClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .testTag("welcome_login_button"),
+                    shape = RoundedCornerShape(9999.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Primary.copy(alpha = 0.4f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = TextPrimary
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Login,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "لدي حساب مسبقاً — تسجيل الدخول",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontFamily = Cairo,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
                         )
                     }
                 }

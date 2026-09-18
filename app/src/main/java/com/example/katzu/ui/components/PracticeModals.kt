@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.LayoutDirection
+import com.example.katzu.data.MistakeEntity
 import com.example.katzu.model.VocabularyWord
 import com.example.katzu.ui.theme.*
 
@@ -125,7 +129,6 @@ fun FlashcardsDialog(
                                 style = MaterialTheme.typography.displayLarge,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -161,8 +164,7 @@ fun FlashcardsDialog(
                                 text = "“${currentWord.exampleGerman}”",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = PrimaryFixedDim,
-                                textAlign = TextAlign.Center,
-                                fontFamily = FontFamily.Serif
+                                textAlign = TextAlign.Center
                             )
                             Text(
                                 text = currentWord.exampleArabic,
@@ -219,6 +221,7 @@ fun FlashcardsDialog(
 
 @Composable
 fun GrammarCheatSheetDialog(
+    grammarList: List<com.example.katzu.data.GrammarEntity> = emptyList(),
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -356,8 +359,7 @@ fun GrammarCheatSheetDialog(
                                     text = "Ich möchte EINEN Kaffee (وليس ein Kaffee)",
                                     modifier = Modifier.padding(12.dp),
                                     color = StatusLearning,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Serif
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -392,9 +394,65 @@ fun GrammarCheatSheetDialog(
                                     text = "mit der Milch / mit dem Zucker",
                                     modifier = Modifier.padding(12.dp),
                                     color = PrimaryFixedDim,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Serif
+                                    fontWeight = FontWeight.Bold
                                 )
+                            }
+                        }
+                    }
+
+                    // Dynamically loaded grammar rules from Cloudflare D1 / Room
+                    grammarList.forEachIndexed { idx, rule ->
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCardSubtle)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${idx + 4}. ${rule.title_ar}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(9999.dp),
+                                        color = Primary.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = rule.level,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Primary,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = rule.explanation_ar.ifBlank { rule.explanation_en },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                                if (rule.example_de.isNotBlank()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = SurfaceContainerLow,
+                                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = rule.example_de,
+                                            modifier = Modifier.padding(12.dp),
+                                            color = StatusSuccess,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -403,3 +461,384 @@ fun GrammarCheatSheetDialog(
         }
     }
 }
+
+/**
+ * Interactive Mistakes Bank Dialog (Item 8)
+ * Enables learners to review and drill their persisted conversation mistakes stored in Room.
+ * Features: Struck-through error vs bold correction, native German TTS with normal & slow speeds,
+ * and an interactive typing drill with instant validation.
+ */
+@Composable
+fun MistakesBankDialog(
+    mistakes: List<MistakeEntity>,
+    onDismiss: () -> Unit,
+    onSpeak: (String) -> Unit = {},
+    onDeleteMistake: (Long) -> Unit = {}
+) {
+    var currentIndex by remember { mutableStateOf(0) }
+    var drillInput by remember { mutableStateOf("") }
+    var practicedMistakeIds by remember { mutableStateOf(setOf<Long>()) }
+
+    val currentMistake = mistakes.getOrNull(currentIndex)
+
+    LaunchedEffect(currentIndex) {
+        drillInput = ""
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.94f)
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(24.dp)),
+            color = SurfaceCard,
+            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = TextSecondary)
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "بنك الأخطاء وتثبيت الصواب",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            fontFamily = Cairo
+                        )
+                        if (mistakes.isNotEmpty()) {
+                            Text(
+                                text = "خطأ ${currentIndex + 1} من ${mistakes.size} • ${practicedMistakeIds.size} أُتقنت",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Primary,
+                                fontFamily = Cairo
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.size(48.dp))
+                }
+
+                if (mistakes.isEmpty()) {
+                    // Empty state
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(StatusSuccess.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = StatusSuccess,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Text(
+                            text = "لا توجد أخطاء مسجلة حالياً! 🎉",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            fontFamily = Cairo
+                        )
+                        Text(
+                            text = "سجلك اللغوي نظيف تماماً، أو أنك لم تبدأ المحادثات بعد. خض سيناريو تدريب مع كاتزو وسيقوم بتسجيل وتصحيح أي تعبير ترغب في صقله.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center,
+                            fontFamily = Cairo,
+                            lineHeight = 18.sp,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text("العودة إلى التمارين", fontFamily = Cairo, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                } else if (currentMistake != null) {
+                    val isPracticed = practicedMistakeIds.contains(currentMistake.id)
+                    val cleanInput = drillInput.trim().lowercase().replace(Regex("[^a-zäöüß0-9 ]"), "")
+                    val cleanTarget = currentMistake.corrected.trim().lowercase().replace(Regex("[^a-zäöüß0-9 ]"), "")
+                    val isInputCorrect = cleanInput.isNotBlank() && cleanInput == cleanTarget
+
+                    // Mistake Card
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = SurfaceCardSubtle,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Scenario tag & rule
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Primary.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = currentMistake.scenarioId.ifBlank { "محادثة عامة" },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Primary,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        fontFamily = Cairo
+                                    )
+                                }
+
+                                if (isPracticed || isInputCorrect) {
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = StatusSuccess.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = "تم الإتقان ✓",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = StatusSuccess,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            fontFamily = Cairo
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Original Mistake (Struck-through)
+                            if (currentMistake.original.isNotBlank()) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        text = "الخطأ الذي قلته:",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = StatusError,
+                                        fontFamily = Cairo
+                                    )
+                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                        Text(
+                                            text = "✕ ${currentMistake.original}",
+                                            style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.LineThrough),
+                                            color = StatusError,
+                                            fontFamily = SourceSerif4,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Correct German Formulation
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "الصواب الألماني النموذجي:",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = StatusSuccess,
+                                    fontFamily = Cairo
+                                )
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    Text(
+                                        text = "✓ ${currentMistake.corrected}",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = StatusSuccess,
+                                        fontFamily = SourceSerif4,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+
+                            // Grammar Rule
+                            if (currentMistake.grammarRule.isNotBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = SurfaceContainerLow,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Lightbulb,
+                                            contentDescription = null,
+                                            tint = Tertiary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = currentMistake.grammarRule,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextSecondary,
+                                            fontFamily = Cairo,
+                                            lineHeight = 16.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Audio Listen Actions (Normal & Slow)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedButton(
+                                    onClick = { onSpeak(currentMistake.corrected) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.VolumeUp, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("نطق عادي", fontFamily = Cairo, style = MaterialTheme.typography.labelSmall)
+                                }
+
+                                OutlinedButton(
+                                    onClick = { onSpeak(currentMistake.corrected) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("نطق هادئ", fontFamily = Cairo, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+
+                            // Interactive Drill Box
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    text = "تمرين الكتابة للتثبيت:",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary,
+                                    fontFamily = Cairo
+                                )
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    OutlinedTextField(
+                                        value = drillInput,
+                                        onValueChange = {
+                                            drillInput = it
+                                            val cIn = it.trim().lowercase().replace(Regex("[^a-zäöüß0-9 ]"), "")
+                                            val cTar = currentMistake.corrected.trim().lowercase().replace(Regex("[^a-zäöüß0-9 ]"), "")
+                                            if (cIn.isNotBlank() && cIn == cTar) {
+                                                practicedMistakeIds = practicedMistakeIds + currentMistake.id
+                                            }
+                                        },
+                                        placeholder = {
+                                            Text(
+                                                "اكتب الجملة الألمانية الصحيحة...",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = TextMuted,
+                                                fontFamily = SourceSerif4
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = if (isInputCorrect) StatusSuccess else Primary,
+                                            unfocusedBorderColor = if (isInputCorrect) StatusSuccess else BorderSubtle,
+                                            focusedContainerColor = SurfaceCard,
+                                            unfocusedContainerColor = SurfaceCard
+                                        ),
+                                        singleLine = false,
+                                        maxLines = 3
+                                    )
+                                }
+
+                                if (isInputCorrect) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    ) {
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = StatusSuccess, modifier = Modifier.size(16.dp))
+                                        Text(
+                                            text = "أحسنت! أتقنت كتابة الجملة بالصواب.",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = StatusSuccess,
+                                            fontFamily = Cairo,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Remove / Archive mistake button
+                            TextButton(
+                                onClick = {
+                                    onDeleteMistake(currentMistake.id)
+                                    if (currentIndex >= mistakes.size - 1) {
+                                        currentIndex = maxOf(0, mistakes.size - 2)
+                                    }
+                                },
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) {
+                                Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = TextMuted, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("حذف هذا الخطأ من قائمتي", color = TextMuted, style = MaterialTheme.typography.labelSmall, fontFamily = Cairo)
+                            }
+                        }
+                    }
+
+                    // Bottom navigation controls (Next / Previous)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = { if (currentIndex > 0) currentIndex-- },
+                            enabled = currentIndex > 0,
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceCardSubtle, contentColor = TextPrimary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("السابق", fontFamily = Cairo)
+                        }
+
+                        Button(
+                            onClick = { if (currentIndex < mistakes.size - 1) currentIndex++ },
+                            enabled = currentIndex < mistakes.size - 1,
+                            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("التالي", fontFamily = Cairo, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

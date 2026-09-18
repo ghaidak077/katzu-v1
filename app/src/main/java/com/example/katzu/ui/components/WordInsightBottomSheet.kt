@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +29,7 @@ import com.example.katzu.R
 import com.example.katzu.model.GermanGender
 import com.example.katzu.model.VocabularyWord
 import com.example.katzu.ui.theme.*
+import com.example.katzu.util.KatzuHaptics
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,7 @@ fun WordInsightBottomSheet(
 ) {
     if (word == null) return
 
+    val haptic = LocalHapticFeedback.current
     var isSlowSpeed by remember { mutableStateOf(false) }
     var isSaved by remember(word) { mutableStateOf(word.isSaved) }
 
@@ -128,6 +130,7 @@ fun WordInsightBottomSheet(
                 // Bookmark button
                 IconButton(
                     onClick = {
+                        KatzuHaptics.tick(haptic)
                         isSaved = !isSaved
                         onToggleBookmark(word.id)
                     },
@@ -183,8 +186,7 @@ fun WordInsightBottomSheet(
                     Text(
                         text = word.phonetic,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextMuted,
-                        fontFamily = FontFamily.Monospace
+                        color = TextMuted
                     )
                     Box(
                         modifier = Modifier
@@ -372,7 +374,10 @@ fun WordInsightBottomSheet(
                         }
 
                         IconButton(
-                            onClick = { onSpeak(word.exampleGerman, 1.0f) },
+                            onClick = {
+                                KatzuHaptics.tick(haptic)
+                                onSpeak(word.exampleGerman, 1.0f)
+                            },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
@@ -387,8 +392,7 @@ fun WordInsightBottomSheet(
                         text = "“${word.exampleGerman}”",
                         style = MaterialTheme.typography.titleMedium,
                         color = TextPrimary,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = FontFamily.Serif
+                        fontWeight = FontWeight.SemiBold
                     )
 
                     Text(
@@ -450,6 +454,7 @@ fun WordInsightBottomSheet(
             // Primary Action: Add to Smart Review Decks
             Button(
                 onClick = {
+                    KatzuHaptics.press(haptic)
                     isSaved = !isSaved
                     onToggleBookmark(word.id)
                 },

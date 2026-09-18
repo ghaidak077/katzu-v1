@@ -20,9 +20,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,16 +30,99 @@ import com.example.katzu.R
 import com.example.katzu.model.TrailNode
 import com.example.katzu.model.TrailNodeStatus
 import com.example.katzu.model.UserProfile
+import com.example.katzu.ui.components.ContentEmptyStateView
+import com.example.katzu.ui.components.bouncyClickable
 import com.example.katzu.ui.theme.*
+import com.example.katzu.util.KatzuHaptics
 
 @Composable
 fun TrailScreen(
     userProfile: UserProfile,
-    trailNodes: List<TrailNode>,
+    scenarios: List<com.example.katzu.data.ScenarioEntity> = emptyList(),
+    sessions: List<com.example.katzu.data.SessionEntity> = emptyList(),
+    trainingList: List<com.example.katzu.data.ScenarioTrainingEntity> = emptyList(),
+    isSyncing: Boolean = false,
+    onRetrySync: () -> Unit = {},
+    selectedLevel: String = "A1",
+    onLevelSelected: (String) -> Unit = {},
     onSelectScenario: (String) -> Unit
 ) {
-    var selectedLevelIndex by remember { mutableStateOf(0) }
+    val haptic = LocalHapticFeedback.current
+    var selectedLevelIndex by remember(selectedLevel) {
+        mutableStateOf(
+            when (selectedLevel.uppercase().trim().take(2)) {
+                "A2" -> 1
+                "B1" -> 2
+                "B2" -> 3
+                else -> 0
+            }
+        )
+    }
     val levels = listOf("A1 • مبتدئ", "A2 • أساسي", "B1 • متوسط", "B2 • متقدم")
+
+    val currentLevelCode = remember(selectedLevelIndex) {
+        when (selectedLevelIndex) {
+            0 -> "A1"
+            1 -> "A2"
+            2 -> "B1"
+            else -> "B2"
+        }
+    }
+
+    val trainingByScenario = remember(trainingList) {
+        trainingList.associateBy { it.scenarioId }
+    }
+    val completedScenarioIds = remember(sessions) {
+        sessions.map { it.scenarioId }.toSet()
+    }
+
+    // Map D1 scenarios into trail nodes for the active level using real user progress
+    val activeTrailNodes = remember(scenarios, currentLevelCode, completedScenarioIds, trainingByScenario, sessions) {
+        var foundActive = false
+        scenarios.mapIndexed { index, s ->
+            val training = trainingByScenario[s.id]
+            val isCompleted = completedScenarioIds.contains(s.id) || (training?.quizAttempted == true && (training.lastScore ?: 0) >= 60)
+            val isStudied = training?.studiedAt != null
+
+            val status = when {
+                isCompleted -> TrailNodeStatus.Mastered
+                !foundActive -> {
+                    foundActive = true
+                    TrailNodeStatus.Active
+                }
+                isStudied -> TrailNodeStatus.Active
+                else -> TrailNodeStatus.Upcoming
+            }
+
+            val accuracy = if (isCompleted) {
+                val scSessions = sessions.filter { it.scenarioId == s.id }
+                if (scSessions.isNotEmpty()) {
+                    scSessions.map { it.accuracyPercent }.average().toInt()
+                } else {
+                    training?.lastScore ?: 100
+                }
+            } else null
+
+            TrailNode(
+                id = s.id,
+                germanTitle = s.title_de,
+                arabicTitle = s.title_ar,
+                levelTag = "$currentLevelCode.${index + 1}",
+                status = status,
+                accuracyPercent = accuracy,
+                stepInfo = "الدرس ${index + 1}",
+                timeEstimate = "~ 5 دقائق",
+                isClickable = true
+            )
+        }
+    }
+
+    val nextScenario = remember(scenarios, completedScenarioIds) {
+        scenarios.firstOrNull { !completedScenarioIds.contains(it.id) } ?: scenarios.firstOrNull()
+    }
+    val nextScenarioIndex = remember(scenarios, nextScenario) {
+        if (nextScenario != null) scenarios.indexOf(nextScenario) + 1 else 1
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -53,15 +136,15 @@ fun TrailScreen(
         item {
             Card(
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                colors = CardDefaults.cardColors(containerColor = SurfaceDarkPurple),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.35f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
                         elevation = 12.dp,
                         shape = RoundedCornerShape(24.dp),
-                        ambientColor = Primary.copy(alpha = 0.2f),
-                        spotColor = Primary.copy(alpha = 0.3f)
+                        ambientColor = Primary.copy(alpha = 0.25f),
+                        spotColor = Primary.copy(alpha = 0.4f)
                     )
             ) {
                 Column(
@@ -78,7 +161,7 @@ fun TrailScreen(
                             color = Primary.copy(alpha = 0.15f)
                         ) {
                             Text(
-                                text = "التحدي اليومي A1.1",
+                                text = "محطتك اليومية $currentLevelCode.$nextScenarioIndex",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Primary,
                                 fontWeight = FontWeight.Bold,
@@ -97,7 +180,7 @@ fun TrailScreen(
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
-                                text = "متبقي 4 ساعات",
+                                text = "جلسة سريعة: ~5-10 د",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextMuted
                             )
@@ -109,34 +192,32 @@ fun TrailScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(SurfaceCardSubtle)
-                                .border(1.dp, Primary.copy(alpha = 0.4f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.katzu_thumbs_up),
-                                contentDescription = "Katzu Mascot",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
+                        Image(
+                            painter = painterResource(id = R.drawable.katzu_thumbs_up),
+                            contentDescription = "كاتزو رفيق المسار",
+                            modifier = Modifier.size(86.dp),
+                            contentScale = ContentScale.Fit
+                        )
 
                         Column(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "مرحباً، ${userProfile.name}.",
+                                text = if (userProfile.name.isNotBlank()) "أهلاً ${userProfile.name}!" else "أهلاً بك!",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
+                            val dailyQuote = remember(userProfile.streakDays, completedScenarioIds.size) {
+                                when {
+                                    completedScenarioIds.isEmpty() -> "“خطوتك الأولى هي الأهم. محادثة واحدة اليوم تصنع فارقاً كبيراً في طلاقتك.”"
+                                    userProfile.streakDays > 1 -> "“ملتزم لليوم ${userProfile.streakDays} على التوالي؟ هكذا تُبنى الطلاقة الحقيقية، خطوة بخطوة.”"
+                                    else -> "“لا تدع يومك يمضي دون حديث. دقيقتان من الممارسة الحية تثبتان كل ما تعلمته.”"
+                                }
+                            }
                             Text(
-                                text = "“هل أنت مستعد لمواجهة قواعد المجرور (Dativ) اليوم قبل أن تبرد قهوتك؟”",
+                                text = dailyQuote,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
                                 lineHeight = 18.sp
@@ -145,45 +226,51 @@ fun TrailScreen(
                     }
 
                     // Next lesson progress inside Daily Focus
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = SurfaceCardSubtle,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    if (nextScenario != null) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = SurfaceDarkPurpleSubtle,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.2f)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = "الدرس التالي: Im Café bestellen",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-                                Text(
-                                    text = "طلب قهوة وحساب المقهى • خطوة 2 من 4",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextMuted
-                                )
-                            }
-
-                            Button(
-                                onClick = { onSelectScenario("im_cafe_bestellen") },
-                                shape = RoundedCornerShape(9999.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryContainer),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                                modifier = Modifier.testTag("trail_continue_button")
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "متابعة",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "الدرس التالي: ${nextScenario.title_de}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                    Text(
+                                        text = "${nextScenario.title_ar} • خطوة $nextScenarioIndex من ${scenarios.size}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextMuted
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { onSelectScenario(nextScenario.id) },
+                                    shape = RoundedCornerShape(9999.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryContainer),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                    modifier = Modifier.testTag("trail_continue_button")
+                                ) {
+                                    Text(
+                                        text = "متابعة",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                }
                             }
                         }
                     }
@@ -207,7 +294,6 @@ fun TrailScreen(
                 ) {
                     levels.forEachIndexed { index, levelTitle ->
                         val isSelected = selectedLevelIndex == index
-                        val isLocked = index > 1
 
                         Surface(
                             shape = RoundedCornerShape(12.dp),
@@ -215,8 +301,10 @@ fun TrailScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable {
-                                    if (!isLocked) selectedLevelIndex = index
+                                .bouncyClickable {
+                                    KatzuHaptics.tick(haptic)
+                                    selectedLevelIndex = index
+                                    onLevelSelected(levelTitle.split(" • ")[0])
                                 }
                         ) {
                             Row(
@@ -224,23 +312,11 @@ fun TrailScreen(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (isLocked) {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = null,
-                                        tint = TextMuted,
-                                        modifier = Modifier.size(12.dp).padding(end = 2.dp)
-                                    )
-                                }
                                 Text(
                                     text = levelTitle.split(" • ")[0],
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = when {
-                                        isSelected -> TextPrimary
-                                        isLocked -> TextMuted
-                                        else -> TextSecondary
-                                    }
+                                    color = if (isSelected) TextPrimary else TextSecondary
                                 )
                             }
                         }
@@ -263,7 +339,7 @@ fun TrailScreen(
                     color = TextPrimary
                 )
                 Text(
-                    text = "A1.1 المستوى المبتدئ",
+                    text = levels.getOrElse(selectedLevelIndex) { "A1 • مبتدئ" },
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted
                 )
@@ -271,16 +347,32 @@ fun TrailScreen(
         }
 
         // Learning Trail Timeline Nodes
-        itemsIndexed(trailNodes) { index, node ->
-            TrailNodeItem(
-                node = node,
-                isLast = index == trailNodes.size - 1,
-                onClick = {
-                    if (node.isClickable) {
-                        onSelectScenario(node.id)
+        if (activeTrailNodes.isEmpty()) {
+            item {
+                ContentEmptyStateView(
+                    title = "لا توجد سيناريوهات متاحة",
+                    message = "لا يوجد اتصال بالإنترنت — يرجى الاتصال لتحميل المحتوى ومسار التعلم.",
+                    buttonText = "إعادة تحميل السيناريوهات",
+                    isRetrying = isSyncing,
+                    onRetry = onRetrySync,
+                    modifier = Modifier.padding(vertical = 24.dp)
+                )
+            }
+        } else {
+            itemsIndexed(
+                items = activeTrailNodes,
+                key = { _, node -> "${node.id}_${node.levelTag}" }
+            ) { index, node ->
+                TrailNodeItem(
+                    node = node,
+                    isLast = index == activeTrailNodes.size - 1,
+                    onClick = {
+                        if (node.isClickable) {
+                            onSelectScenario(node.id)
+                        }
                     }
-                }
-            )
+                )
+            }
         }
 
         // Motivational Footer Quip Card
@@ -295,23 +387,15 @@ fun TrailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceCard),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.katzu_trail_guide),
-                            contentDescription = "Katzu Tip",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.katzu_trail_guide),
+                        contentDescription = "ملاحظة كاتزو السريعة",
+                        modifier = Modifier.size(54.dp),
+                        contentScale = ContentScale.Fit
+                    )
 
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
@@ -343,7 +427,7 @@ private fun TrailNodeItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = node.isClickable, onClick = onClick)
+            .bouncyClickable(enabled = node.isClickable, onClick = onClick)
             .testTag("trail_node_${node.id}"),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -459,10 +543,10 @@ private fun TrailNodeItem(
                     ) {
                         Text(
                             text = when (node.status) {
-                                TrailNodeStatus.Mastered -> "${node.accuracyPercent}% إتقان"
-                                TrailNodeStatus.Active -> node.stepInfo
-                                TrailNodeStatus.Upcoming -> "متاح قريباً"
-                                TrailNodeStatus.Locked -> "مغلق"
+                                TrailNodeStatus.Mastered -> "${node.accuracyPercent}% أتقنتها"
+                                TrailNodeStatus.Active -> "محطتك الحالية"
+                                TrailNodeStatus.Upcoming -> "التالية"
+                                TrailNodeStatus.Locked -> "أكمل ما قبلها"
                             },
                             style = MaterialTheme.typography.labelSmall,
                             color = when (node.status) {
@@ -479,8 +563,7 @@ private fun TrailNodeItem(
                 Text(
                     text = node.germanTitle,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (node.status == TrailNodeStatus.Locked) TextMuted else TextSecondary,
-                    fontFamily = FontFamily.Serif
+                    color = if (node.status == TrailNodeStatus.Locked) TextMuted else TextSecondary
                 )
 
                 Row(
